@@ -1,128 +1,120 @@
-
+#########################################
+# LOCALS
+#########################################
 
 locals {
-
-  private_subnets = flatten([
-    for group in var.private_subnet_groups : [
-      for az in var.azs : {
-        name = "kalyan-${group}-${az}"
-        az   = az
-      }
-    ]
-  ])
-
-  public_subnets = flatten([
-    for group in var.public_subnet_groups : [
-      for az in var.azs : {
-        name = "kalyan-${group}-${az}"
-        az   = az
-      }
-    ]
-  ])
+  private_cidrs = [for s in var.private_subnets : s.cidr]
 }
 
 #########################################
-# PRIVATE SUBNETS
+# SUBNETS
 #########################################
 
 resource "aws_subnet" "private" {
-  for_each = {
-    for idx, subnet in local.private_subnets :
-    subnet.name => subnet
-  }
+  for_each = var.private_subnets
 
   vpc_id            = var.vpc_id
+  cidr_block        = each.value.cidr
   availability_zone = each.value.az
 
-  cidr_block = cidrsubnet(
-    var.vpc_cidr,
-    10,
-    index(keys({ for i, s in local.private_subnets : s.name => i }), each.key)
-  )
-
-  tags = {
-    Name = each.key
-    Type = "private"
-  }
+  tags = { Name = each.key }
 }
-
-#########################################
-# PUBLIC SUBNETS
-#########################################
 
 resource "aws_subnet" "public" {
-  for_each = {
-    for idx, subnet in local.public_subnets :
-    subnet.name => subnet
-  }
+  for_each = var.public_subnets
 
-  vpc_id            = var.vpc_id
-  availability_zone = each.value.az
+  vpc_id                  = var.vpc_id
+  cidr_block              = each.value.cidr
+  availability_zone       = each.value.az
   map_public_ip_on_launch = true
 
-  cidr_block = cidrsubnet(
-    var.vpc_cidr,
-    10,
-    index(keys({ for i, s in local.public_subnets : s.name => i + 200 }), each.key)
-  )
-
-  tags = {
-    Name = each.key
-    Type = "public"
-  }
+  tags = { Name = each.key }
 }
 
 #########################################
-# SECURITY GROUPS
+# ROUTE TABLE (PUBLIC)
 #########################################
 
-resource "aws_security_group" "lb_sg" {
-  name   = "kalyan-lb-sg"
+resource "aws_route_table" "public" {
   vpc_id = var.vpc_id
-
-  ingress {
-    from_port = 0
-    to_port   = 65535
-    protocol  = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 }
 
-resource "aws_security_group" "k8s_nodes" {
-  name   = "kalyan-k8s-sg"
-  vpc_id = var.vpc_id
+resource "aws_route" "internet" {
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = var.igw_id
+}
 
-  ingress {
-    from_port = 0
-    to_port   = 65535
-    protocol  = "tcp"
-    self      = true
-  }
+resource "aws_route_table_association" "public_assoc" {
+  for_each = aws_subnet.public
 
-  ingress {
-    from_port       = 6443
-    to_port         = 6443
-    protocol        = "tcp"
-    security_groups = [aws_security_group.lb_sg.id]
-  }
-
-  egress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.public.id
 }
 
 #########################################
-# NLB
+# SECURITY GROUP - MASTER
+#########################################
+
+resource "aws_security_group" "master" {
+  name   = var.master_sg_name
+  vpc_id = var.vpc_id
+}
+
+#########################################
+# SECURITY GROUP - WORKER
+#########################################
+
+resource "aws_security_group" "worker" {
+  name   = var.worker_sg_name
+  vpc_id = var.vpc_id
+}
+
+#########################################
+# SG RULES
+#########################################
+
+# Internet → Master (for NLB traffic)
+resource "aws_security_group_rule" "internet_http" {
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 80
+  to_port           = 80
+  security_group_id = aws_security_group.master.id
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+resource "aws_security_group_rule" "internet_https" {
+  type              = "ingress"
+  protocol          = "tcp"
+  from_port         = 443
+  to_port           = 443
+  security_group_id = aws_security_group.master.id
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+# Worker → Master
+resource "aws_security_group_rule" "worker_to_master" {
+  type                     = "ingress"
+  protocol                 = "-1"
+  from_port                = 0
+  to_port                  = 0
+  security_group_id        = aws_security_group.master.id
+  source_security_group_id = aws_security_group.worker.id
+}
+
+# Worker ↔ Worker (CIDR आधारित)
+resource "aws_security_group_rule" "worker_internal" {
+  type              = "ingress"
+  protocol          = "-1"
+  from_port         = 0
+  to_port           = 0
+  security_group_id = aws_security_group.worker.id
+  cidr_blocks       = local.private_cidrs
+}
+
+#########################################
+# LOAD BALANCER (NLB - NO SG)
 #########################################
 
 resource "aws_lb" "k8s" {
@@ -130,6 +122,4 @@ resource "aws_lb" "k8s" {
   load_balancer_type = "network"
 
   subnets = [for s in aws_subnet.public : s.id]
-
-  security_groups = [aws_security_group.lb_sg.id]
 }
