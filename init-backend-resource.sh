@@ -11,7 +11,8 @@ PROFILE=$1
 REGION="ap-south-1"
 BUCKET="state-v1"
 DYNAMO="terraform-lock"
-DYNAMO="terraform-app-lock"
+# shellcheck disable=SC2276
+DYNAMO-app="terraform-app-lock"
 
 echo "Using profile: $PROFILE"
 
@@ -40,6 +41,14 @@ else
 
   aws dynamodb create-table \
     --table-name $DYNAMO \
+    --attribute-definitions AttributeName=LockID,AttributeType=S \
+    --key-schema AttributeName=LockID,KeyType=HASH \
+    --billing-mode PAY_PER_REQUEST \
+    --region $REGION \
+    --profile $PROFILE
+fi
+  aws dynamodb create-table \
+    --table-name $DYNAMO-app \
     --attribute-definitions AttributeName=LockID,AttributeType=S \
     --key-schema AttributeName=LockID,KeyType=HASH \
     --billing-mode PAY_PER_REQUEST \
