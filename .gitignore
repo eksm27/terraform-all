@@ -5,3 +5,4 @@ cat <<EOF > .gitignore
 *.tfstate.*
 crash.log
 
+.terraform/
