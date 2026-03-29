@@ -12,3 +12,8 @@ variable "private_subnet_groups" {
 variable "public_subnet_groups" {
   type = list(string)
 }
+
+variable "aws_profile" {}
+variable "aws_region" {}
+variable "credentials_file" {}
+variable "config_file" {}

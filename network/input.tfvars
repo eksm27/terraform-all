@@ -15,3 +15,8 @@ private_subnet_groups = [
 public_subnet_groups = [
   "pubs1","pubs2","pubs3"
 ]
+
+aws_profile       = "my-profile"
+aws_region        = "ap-south-1"
+credentials_file  = "/home/kalyan/.aws/credentials"
+config_file       = "/home/kalyan/.aws/config"
