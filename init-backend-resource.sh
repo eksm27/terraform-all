@@ -11,6 +11,7 @@ PROFILE=$1
 REGION="ap-south-1"
 BUCKET="state-v1"
 DYNAMO="terraform-lock"
+DYNAMO="terraform-app-lock"
 
 echo "Using profile: $PROFILE"
 
