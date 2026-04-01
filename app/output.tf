@@ -1,11 +1,13 @@
-output "all_nodes" {
+output "nodes_info" {
+  description = "EC2 node details"
   value = {
-    for node in aws_instance.nodes :
-    node.tags["Name"] => {
-      id          = node.id
-      private_ip  = node.private_ip
-      subnet_id   = node.subnet_id
-      sg_ids      = node.vpc_security_group_ids
+    for k, v in aws_instance.nodes :
+    k => {
+      id         = v.id
+      private_ip = v.private_ip
+      public_ip  = v.public_ip
+      subnet_id  = v.subnet_id
+      role       = v.tags["Role"]
     }
   }
 }

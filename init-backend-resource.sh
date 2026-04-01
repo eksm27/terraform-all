@@ -1,59 +1,52 @@
 #!/bin/bash
-set -e
+# Usage: ./init-backend-resource.sh <aws-profile> <layer>
+# Layer can be 'network' or 'app'
 
-# Usage check
-if [ -z "$1" ]; then
-  echo "Usage: $0 <aws-profile>"
+if [ -z "$1" ] || [ -z "$2" ]; then
+  echo "Usage: $0 <aws-profile> <layer>"
   exit 1
 fi
 
-PROFILE=$1
-REGION="ap-south-1"
-BUCKET="state-v1"
-DYNAMO="terraform-lock"
-# shellcheck disable=SC2276
-DYNAMO-app="terraform-app-lock"
+AWS_PROFILE=$1
+LAYER=$2
+S3_BUCKET="state-v1"
 
-echo "Using profile: $PROFILE"
-
-# Check S3 bucket
-if aws s3api head-bucket --bucket $BUCKET --profile $PROFILE 2>/dev/null; then
-  echo "S3 bucket exists"
+# Configure backend key and dynamodb table per layer
+if [ "$LAYER" == "network" ]; then
+  STATE_KEY="network/terraform.tfstate"
+  DYNAMO_TABLE="terraform-network-lock"
+elif [ "$LAYER" == "app" ]; then
+  STATE_KEY="app/terraform.tfstate"
+  DYNAMO_TABLE="terraform-app-lock"
+elif [ "$LAYER" == "eks" ]; then
+  STATE_KEY="eks/terraform.tfstate"
+  DYNAMO_TABLE="terraform-eks-lock"
 else
-  echo "Creating S3 bucket..."
-  aws s3 mb s3://$BUCKET --region $REGION --profile $PROFILE
-
-  aws s3api put-bucket-versioning \
-    --bucket $BUCKET \
-    --versioning-configuration Status=Enabled \
-    --profile $PROFILE
+  echo "Invalid layer. Use 'network' or 'app' or 'eks'."
+  exit 1
 fi
 
-# Check DynamoDB
-if aws dynamodb describe-table \
-  --table-name $DYNAMO \
-  --region $REGION \
-  --profile $PROFILE >/dev/null 2>&1; then
-
-  echo "DynamoDB exists"
-else
-  echo "Creating DynamoDB table..."
-
+# Check if DynamoDB table exists, create if missing
+TABLE_CHECK=$(aws dynamodb describe-table --table-name $DYNAMO_TABLE --profile $AWS_PROFILE 2>/dev/null || echo "NOTFOUND")
+if [[ "$TABLE_CHECK" == "NOTFOUND" ]]; then
+  echo "DynamoDB table $DYNAMO_TABLE not found. Creating..."
   aws dynamodb create-table \
-    --table-name $DYNAMO \
+    --table-name $DYNAMO_TABLE \
     --attribute-definitions AttributeName=LockID,AttributeType=S \
     --key-schema AttributeName=LockID,KeyType=HASH \
     --billing-mode PAY_PER_REQUEST \
-    --region $REGION \
-    --profile $PROFILE
-fi
-  aws dynamodb create-table \
-    --table-name $DYNAMO-app \
-    --attribute-definitions AttributeName=LockID,AttributeType=S \
-    --key-schema AttributeName=LockID,KeyType=HASH \
-    --billing-mode PAY_PER_REQUEST \
-    --region $REGION \
-    --profile $PROFILE
+    --profile $AWS_PROFILE
+else
+  echo "DynamoDB table $DYNAMO_TABLE exists."
 fi
 
-echo "Backend ready!"
+# Initialize Terraform backend for the layer
+terraform -chdir=./$LAYER init \
+  -backend-config="bucket=$S3_BUCKET" \
+  -backend-config="key=$STATE_KEY" \
+  -backend-config="region=ap-south-1" \
+  -backend-config="dynamodb_table=$DYNAMO_TABLE" \
+  -reconfigure \
+  -upgrade \
+  -input=false \
+  -force-copy

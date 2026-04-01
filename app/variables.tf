@@ -26,12 +26,16 @@ variable "ec2_instance_type" {
   default     = "t3.medium"
 }
 
+
+
+
 variable "nodes" {
-  description = "List of node definitions"
+  description = "List of EC2 nodes (master/worker) with subnet, SG, instance type"
   type = list(object({
-    name_prefix = string       # Name prefix for the node, e.g., master or worker
-    count       = number       # Number of nodes
-    subnet_id   = string       # Subnet ID to launch nodes
-    sg_ids      = list(string) # Security Group IDs
+    name          = string
+    role          = string
+    subnet_id     = string
+    sg_ids        = list(string)
+    instance_type = string
   }))
 }
