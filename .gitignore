@@ -6,3 +6,4 @@ cat <<EOF > .gitignore
 crash.log
 
 .terraform/
+.terraform*
