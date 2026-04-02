@@ -1,45 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>User App</title>
-    <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container">
+<h2>System Health</h2>
+<div id="health"></div>
 
-    <h1>User Portal</h1>
+<h2>Register</h2>
+<input id="rfname" placeholder="First Name">
+<input id="rlname" placeholder="Last Name">
+<input id="remail" placeholder="Email">
+<input id="rpass" type="password">
+<button onclick="register()">Register</button>
 
-    <!-- Register -->
-    <div class="card">
-        <h2>Register</h2>
+<h2>Login</h2>
+<input id="lemail">
+<input id="lpass" type="password">
+<button onclick="login()">Login</button>
 
-        <input id="fname" placeholder="First Name">
-        <input id="lname" placeholder="Last Name">
-        <input id="email" placeholder="Email">
-        <input id="password" type="password" placeholder="Password">
-        <input id="mobile" placeholder="Mobile">
-        <input id="location" placeholder="Location">
-        <input id="dob" type="date">
-        <input id="photo" type="file">
-
-        <button onclick="register()">Register</button>
-    </div>
-
-    <!-- Login -->
-    <div class="card">
-        <h2>Login</h2>
-
-        <input id="login_email" placeholder="Email">
-        <input id="login_password" type="password" placeholder="Password">
-
-        <button onclick="login()">Login</button>
-    </div>
-
-    <!-- Profile -->
-    <div id="profile" class="card hidden"></div>
-
-</div>
+<div id="profile"></div>
 
 <script src="app.js"></script>
 </body>

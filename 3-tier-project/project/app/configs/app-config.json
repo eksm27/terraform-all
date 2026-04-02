@@ -1,11 +1,6 @@
 {
   "db_host": "db-service",
-  "db_port": 3306,
   "db_name": "users",
   "db_user": "appuser",
-  "db_pass": "apppassword",
-  "s3_bucket": "profile-image-01",
-  "s3_path": "image/",
-  "region": "ap-south-1",
-  "cloudfront_url": "https://d3gqew5t0x9hq5.cloudfront.net"
+  "db_pass": "apppassword"
 }

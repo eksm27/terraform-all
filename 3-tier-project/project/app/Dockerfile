@@ -4,9 +4,10 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y jq
 
-COPY . .
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-RUN pip install flask boto3 mysql-connector-python
+COPY . .
 
 RUN chmod +x entrypoint.sh
 

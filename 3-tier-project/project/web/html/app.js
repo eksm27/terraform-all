@@ -1,78 +1,58 @@
 let API = "";
 
-// Load config
 fetch("config.json")
-    .then(res => res.json())
-    .then(cfg => {
-        API = cfg.app_endpoint;
-        console.log("API:", API);
-    });
+.then(r=>r.json())
+.then(c=>{
+    API = c.app_endpoint;
+    console.log("API:", API);
+    checkHealth();
+});
 
-
-// Register
-async function register() {
-
-    let file = document.getElementById("photo").files[0];
-
-    let formData = new FormData();
-    formData.append("file", file);
-
-    let uploadRes = await fetch(API + "/upload", {
-        method: "POST",
-        body: formData
-    });
-
-    let uploadData = await uploadRes.json();
-
-    let data = {
-        first_name: fname.value,
-        last_name: lname.value,
-        email: email.value,
-        password: password.value,
-        mobile: mobile.value,
-        location: location.value,
-        dob: dob.value,
-        photo_url: uploadData.url
-    };
-
-    await fetch(API + "/register", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(data)
-    });
-
-    alert("Registered Successfully!");
+function checkHealth(){
+fetch(API+"/health")
+.then(r=>r.json())
+.then(d=>{
+    document.getElementById("health").innerHTML = d.status;
+})
+.catch(()=>document.getElementById("health").innerHTML="APP DOWN");
 }
 
+function register(){
+console.log("Register clicked");
 
-// Login
-async function login() {
+fetch(API+"/register",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+first_name:rfname.value,
+last_name:rlname.value,
+email:remail.value,
+password:rpass.value,
+mobile:"999",
+location:"chennai",
+dob:"2000-01-01"
+})
+})
+.then(r=>r.json())
+.then(d=>{
+console.log(d);
+alert(JSON.stringify(d));
+})
+.catch(e=>console.error(e));
+}
 
-    let res = await fetch(API + "/login", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-            email: login_email.value,
-            password: login_password.value
-        })
-    });
-
-    let data = await res.json();
-
-    if (data.error) {
-        alert("Invalid login");
-        return;
-    }
-
-    let profile = document.getElementById("profile");
-
-    profile.innerHTML = `
-        <h2>Welcome ${data.first_name}</h2>
-        <img src="${data.photo_url}" width="150">
-        <p>Email: ${data.email}</p>
-        <p>Mobile: ${data.mobile}</p>
-        <p>Location: ${data.location}</p>
-    `;
-
-    profile.classList.remove("hidden");
+function login(){
+fetch(API+"/login",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+email:lemail.value,
+password:lpass.value
+})
+})
+.then(r=>r.json())
+.then(d=>{
+if(d.error){alert("Invalid");return;}
+document.getElementById("profile").innerHTML="Welcome "+d.first_name;
+});
 }

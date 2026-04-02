@@ -1,88 +1,81 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 import mysql.connector
-import boto3
 
 app = Flask(__name__)
+CORS(app)
 
-# DB Connection
 def get_db():
-    return mysql.connector.connect(
-        host=os.environ['DB_HOST'],
-        user=os.environ['DB_USER'],
-        password=os.environ['DB_PASS'],
-        database=os.environ['DB_NAME']
-    )
+    try:
+        print("🔌 Connecting to DB...")
+        db = mysql.connector.connect(
+            host=os.environ['DB_HOST'],
+            user=os.environ['DB_USER'],
+            password=os.environ['DB_PASS'],
+            database=os.environ['DB_NAME']
+        )
+        print("✅ DB CONNECTED")
+        return db
+    except Exception as e:
+        print("❌ DB ERROR:", e)
+        return None
 
-# S3 Client
-s3 = boto3.client("s3", region_name=os.environ['REGION'])
+@app.route("/health")
+def health():
+    return {"status": "APP OK"}
 
-# Upload Image to S3
-@app.route("/upload", methods=["POST"])
-def upload():
-    file = request.files['file']
-    key = os.environ['S3_PATH'] + file.filename
+@app.route("/health/db")
+def health_db():
+    db = get_db()
+    return {"db": "ok"} if db else {"db": "failed"}
 
-    s3.upload_fileobj(file, os.environ['S3_BUCKET'], key)
-
-    url = f"{os.environ['CLOUDFRONT_URL']}/{key}"
-
-    return jsonify({"url": url})
-
-
-# Register User
 @app.route("/register", methods=["POST"])
 def register():
-    data = request.json
+    try:
+        data = request.json
+        print("📥 REGISTER:", data)
 
-    db = get_db()
-    cur = db.cursor()
+        db = get_db()
+        if not db:
+            return {"error": "DB failed"}
 
-    cur.execute("""
-        INSERT INTO users 
-        (first_name, last_name, email, password, mobile, location, dob, photo_url)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-    """, (
-        data["first_name"],
-        data["last_name"],
-        data["email"],
-        data["password"],
-        data["mobile"],
-        data["location"],
-        data["dob"],
-        data["photo_url"]
-    ))
+        cur = db.cursor()
 
-    db.commit()
+        cur.execute("""
+        INSERT INTO users(first_name,last_name,email,password,mobile,location,dob)
+        VALUES (%s,%s,%s,%s,%s,%s,%s)
+        """, (
+            data.get("first_name"),
+            data.get("last_name"),
+            data.get("email"),
+            data.get("password"),
+            data.get("mobile"),
+            data.get("location"),
+            data.get("dob")
+        ))
 
-    return jsonify({"status": "registered"})
+        db.commit()
+        print("✅ INSERT SUCCESS")
 
+        return {"status": "registered"}
 
-# Login User
+    except Exception as e:
+        print("❌ ERROR:", e)
+        return {"error": str(e)}
+
 @app.route("/login", methods=["POST"])
 def login():
     data = request.json
+    print("🔐 LOGIN:", data)
 
     db = get_db()
     cur = db.cursor(dictionary=True)
 
-    cur.execute("""
-        SELECT * FROM users 
-        WHERE email=%s AND password=%s
-    """, (data["email"], data["password"]))
+    cur.execute("SELECT * FROM users WHERE email=%s AND password=%s",
+                (data["email"], data["password"]))
 
     user = cur.fetchone()
-
-    if user:
-        return jsonify(user)
-    else:
-        return jsonify({"error": "Invalid credentials"})
-
-
-# Health Check
-@app.route("/health")
-def health():
-    return {"status": "ok"}
-
+    return jsonify(user if user else {"error": "Invalid"})
 
 app.run(host="0.0.0.0", port=9090)
