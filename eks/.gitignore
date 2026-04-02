@@ -1,8 +1,0 @@
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-.terraform*
-crash.log
-
-.terraform/

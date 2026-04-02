@@ -1,6 +1,6 @@
 #!/bin/bash
 # Usage: ./init-backend-resource.sh <aws-profile> <layer>
-# Layer can be 'network' or 'app'
+# Layer can be 'network' or 'ec2'
 
 if [ -z "$1" ] || [ -z "$2" ]; then
   echo "Usage: $0 <aws-profile> <layer>"

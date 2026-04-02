@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h1>User Portal</h1>
+
+    <!-- Register -->
+    <div class="card">
+        <h2>Register</h2>
+
+        <input id="fname" placeholder="First Name">
+        <input id="lname" placeholder="Last Name">
+        <input id="email" placeholder="Email">
+        <input id="password" type="password" placeholder="Password">
+        <input id="mobile" placeholder="Mobile">
+        <input id="location" placeholder="Location">
+        <input id="dob" type="date">
+        <input id="photo" type="file">
+
+        <button onclick="register()">Register</button>
+    </div>
+
+    <!-- Login -->
+    <div class="card">
+        <h2>Login</h2>
+
+        <input id="login_email" placeholder="Email">
+        <input id="login_password" type="password" placeholder="Password">
+
+        <button onclick="login()">Login</button>
+    </div>
+
+    <!-- Profile -->
+    <div id="profile" class="card hidden"></div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
