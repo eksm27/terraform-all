@@ -1,0 +1,6 @@
+{
+  "db_host": "db-service",
+  "db_name": "users",
+  "db_user": "appuser",
+  "db_pass": "apppassword"
+}
