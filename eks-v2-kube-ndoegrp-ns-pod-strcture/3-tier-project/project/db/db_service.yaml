@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-nlb
+  namespace: db
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-012cddbc2f89e5463,subnet-092a50f1cacc4cf97
+spec:
+  selector:
+    app: db
+    tier: database
+
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+
+  type: LoadBalancer

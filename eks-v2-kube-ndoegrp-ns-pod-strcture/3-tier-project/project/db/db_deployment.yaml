@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  namespace: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+      tier: database
+  template:
+    metadata:
+      labels:
+        app: db
+        tier: database
+    spec:
+      nodeSelector:
+        role: db   # 👈 nodegroup-03
+
+      tolerations:
+      - key: "role"
+        operator: "Equal"
+        value: "db"
+        effect: "NoSchedule"
+
+      containers:
+      - name: db
+        image: 178707647014.dkr.ecr.ap-south-1.amazonaws.com/db:v1
+        imagePullPolicy: Always
+
+        ports:
+        - containerPort: 3306
+
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: rootpassword
+
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

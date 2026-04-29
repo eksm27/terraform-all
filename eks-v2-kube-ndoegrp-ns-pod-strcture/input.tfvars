@@ -32,20 +32,31 @@ clusters = {
     environment        = "dev"
 
     node_groups = {
-      blue = {
-        instance_types = ["t3.medium"]
-        min_size       = 1
-        max_size       = 2
-        desired_size   = 1
-        capacity_type  = "ON_DEMAND"
-      }
-
-      green = {
+      ng01 = {
         instance_types = ["t3.medium"]
         min_size       = 1
         max_size       = 3
         desired_size   = 2
         capacity_type  = "ON_DEMAND"
+       role           = "web"
+      }
+
+      ng02 = {
+        instance_types = ["t3.medium"]
+        min_size       = 1
+        max_size       = 3
+        desired_size   = 2
+        capacity_type  = "ON_DEMAND"
+        role           = "app"
+      }
+
+            ng03 = {
+        instance_types = ["t3.medium"]
+        min_size       = 1
+        max_size       = 3
+        desired_size   = 2
+        capacity_type  = "ON_DEMAND"
+              role           = "db"
       }
     }
   }

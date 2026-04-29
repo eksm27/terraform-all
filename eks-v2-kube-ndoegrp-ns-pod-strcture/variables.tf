@@ -15,6 +15,7 @@ variable "clusters" {
       max_size       = number
       desired_size   = number
       capacity_type  = string
+      role = string
     }))
   }))
 }

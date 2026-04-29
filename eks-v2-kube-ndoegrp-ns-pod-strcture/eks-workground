@@ -1,0 +1,80 @@
+kubectl label nodes test01-ng01 role=web
+kubectl label nodes test01-ng02 role=app
+kubectl label nodes test01-ng03 role=db
+
+
+kubectl taint nodes test01-ng01 role=web:NoSchedule
+kubectl taint nodes test01-ng02 role=app:NoSchedule
+kubectl taint nodes test01-ng03 role=db:NoSchedule
+
+
+kubectl create namespace web
+kubectl create namespace app
+kubectl create namespace db
+
+kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints
+
+178707647014.dkr.ecr.ap-south-1.amazonaws.com/db:v1
+
+
+✅ STEP 1: Verify Node Labels
+
+From your Terraform:
+role = db
+
+Check:
+kubectl get nodes --show-labels | grep role=db
+
+✅ STEP 2: Verify Taint
+kubectl describe node <db-node> | grep Taints
+
+Must be:
+role=db:NoSchedule
+
+
+✅ STEP 3: Namespace
+kubectl create namespace db
+
+After deployment and service applied.
+
+🚨 CRITICAL (Don’t Miss This)
+✔ Private Subnet Tags MUST exist
+kubernetes.io/role/internal-elb = 1
+kubernetes.io/cluster/test01 = shared
+
+✅ STEP 6: Apply
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+
+✅ STEP 7: Verify
+Pods
+kubectl get pods -n db -o wide
+
+👉 Must show:
+NODE → nodegroup-03
+Service
+kubectl get svc -n db
+
+
+👉 Expected:
+internal-xxxx.elb.amazonaws.com
+
+🎯 FINAL FLOW
+ECR Image
+   ↓
+Deployment
+   ↓
+Pod (ONLY role=db nodegroup-03)
+   ↓
+Service (internal NLB)
+   ↓
+Private access inside VPC
+
+🔥 IMPORTANT ANSWER TO YOUR CORE QUESTION
+“Service should associate only with nodegroup-03”
+
+✔ Achieved by:
+nodeSelector + tolerations → controls pod placement
+Service selector → picks only those pods
+
+❌ Service cannot directly bind to nodes

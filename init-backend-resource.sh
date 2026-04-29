@@ -21,6 +21,15 @@ elif [ "$LAYER" == "app" ]; then
 elif [ "$LAYER" == "eks" ]; then
   STATE_KEY="eks/terraform.tfstate"
   DYNAMO_TABLE="terraform-eks-lock"
+elif [ "$LAYER" == "eks-multi-nodegroup" ]; then
+  STATE_KEY="eks-multi-nodegroup/terraform.tfstate"
+  DYNAMO_TABLE="terraform-eks-multi-nodegroup-lock"
+elif [ "$LAYER" == "eks-cluster" ]; then
+  STATE_KEY="eks-cluster/terraform.tfstate"
+  DYNAMO_TABLE="terraform-eks-cluster-lock"
+elif [ "$LAYER" == "eks-multi-namespace" ]; then
+  STATE_KEY="eks-multi-namespace/terraform.tfstate"
+  DYNAMO_TABLE="terraform-eks-multi-namespace-lock"
 else
   echo "Invalid layer. Use 'network' or 'app' or 'eks'."
   exit 1
